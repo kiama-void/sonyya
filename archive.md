@@ -4,7 +4,6 @@ title: Articles
 permalink: /archive/
 ---
 
-<p class="page-lead">Longer pieces: explanations, experiments, and worked-through ideas. <a href="{{ '/explore/' | relative_url }}">Filter by topic or tag →</a></p>
 
 {% assign years = site.posts | group_by_exp: 'p', "p.date | date: '%Y'" %}
 {% for y in years %}

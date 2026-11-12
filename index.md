@@ -4,14 +4,6 @@ title: Home
 permalink: /
 ---
 
-<section class="intro">
-  <h1>Notes on learning, building, and thinking carefully.</h1>
-  <p class="lead">
-    I write about artificial intelligence, machine learning, engineering experiments,
-    mathematics, and the kinds of ideas that only become clear after a few honest attempts.
-  </p>
-</section>
-
 <div class="home-grid">
   <section class="home-posts">
     <div class="section-heading">
@@ -27,6 +19,8 @@ permalink: /
           <p>{{ post.description }}</p>
         {% endif %}
       </article>
+    {% else %}
+      <p class="empty">No articles yet.</p>
     {% endfor %}
   </section>
 
