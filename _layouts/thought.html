@@ -1,0 +1,16 @@
+---
+layout: default
+---
+
+<article class="thought-page">
+  <p class="eyebrow"><a href="{{ '/thoughts/' | relative_url }}">Thoughts</a></p>
+  {% if page.heading %}<h1 class="thought-page-heading">{{ page.heading }}</h1>{% endif %}
+  <div class="thought-page-body{% if page.heading %} has-heading{% endif %}">
+    {{ content }}
+  </div>
+  <p class="thought-page-meta">
+    <time datetime="{{ page.date | date_to_xmlschema }}">{{ page.date | date: "%B %-d, %Y" }}</time>
+  </p>
+  {% if page.tags.size > 0 %}<p class="thought-page-tags">{% include tag-list.html tags=page.tags %}</p>{% endif %}
+  <p><a class="nav-link" href="{{ '/thoughts/' | relative_url }}">← All thoughts</a></p>
+</article>

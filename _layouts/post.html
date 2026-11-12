@@ -4,18 +4,52 @@ layout: default
 
 <article class="post-article">
   <header class="post-header">
-    <p class="eyebrow">{{ page.categories | join: ' / ' }}</p>
     <h1>{{ page.title }}</h1>
-    <div class="post-meta">
-      <time datetime="{{ page.date | date_to_xmlschema }}">{{ page.date | date: "%B %-d, %Y" }}</time>
-      <span>·</span>
-      <span>{{ page.reading_time }}</span>
-    </div>
+    {% if page.description %}<p class="post-dek">{{ page.description }}</p>{% endif %}
   </header>
 
-  <div class="post-body">
-    {{ content }}
+  <div class="post-grid">
+    <aside class="post-aside">
+      <dl class="post-facts">
+        <div><dt>Published</dt><dd><time datetime="{{ page.date | date_to_xmlschema }}">{{ page.date | date: "%b %-d, %Y" }}</time></dd></div>
+        {% if page.reading_time %}<div><dt>Reading</dt><dd>{{ page.reading_time }}</dd></div>{% endif %}
+        {% if page.categories.size > 0 %}
+        <div><dt>Topic</dt><dd class="post-tags">{% for c in page.categories %}<a href="{{ '/explore/' | relative_url }}?topic={{ c | slugify }}">{{ c | replace: '-', ' ' }}</a>{% endfor %}</dd></div>
+        {% endif %}
+        {% if page.tags.size > 0 %}
+        <div><dt>Tags</dt><dd>{% include tag-list.html tags=page.tags %}</dd></div>
+        {% endif %}
+      </dl>
+      <nav class="post-toc" id="post-toc" aria-label="On this page" hidden>
+        <p class="post-toc-label">On this page</p>
+        <ol></ol>
+      </nav>
+    </aside>
+
+    <div class="post-body" id="post-body">
+      {{ content }}
+    </div>
   </div>
+
+  {% assign related_html = "" %}
+  {% assign related_count = 0 %}
+  {% for p in site.posts %}
+    {% if p.url == page.url or related_count >= 3 %}{% continue %}{% endif %}
+    {% assign shared = 0 %}
+    {% for t in p.tags %}{% if page.tags contains t %}{% assign shared = shared | plus: 1 %}{% endif %}{% endfor %}
+    {% if shared == 0 and page.categories.size > 0 and p.categories contains page.categories[0] %}{% assign shared = 1 %}{% endif %}
+    {% if shared > 0 %}
+      {% capture card %}<a class="related-card" href="{{ p.url | relative_url }}"><span class="related-date">{{ p.date | date: "%b %-d, %Y" }}</span><span class="related-title">{{ p.title }}</span></a>{% endcapture %}
+      {% assign related_html = related_html | append: card %}
+      {% assign related_count = related_count | plus: 1 %}
+    {% endif %}
+  {% endfor %}
+  {% if related_count > 0 %}
+  <section class="related">
+    <h2 class="related-label">Related</h2>
+    <div class="related-grid">{{ related_html }}</div>
+  </section>
+  {% endif %}
 
   <nav class="post-nav" aria-label="Post navigation">
     {% if page.previous %}
@@ -29,6 +63,34 @@ layout: default
 </article>
 
 <script>
+  // Build "On this page" from the post's h2 headings, and highlight the current one.
+  (function () {
+    var body = document.getElementById('post-body');
+    var toc = document.getElementById('post-toc');
+    var heads = body ? body.querySelectorAll('h2[id]') : [];
+    if (!toc || heads.length < 2) return;
+    var list = toc.querySelector('ol');
+    var links = [];
+    heads.forEach(function (h) {
+      var li = document.createElement('li');
+      var a = document.createElement('a');
+      a.href = '#' + h.id;
+      a.textContent = h.textContent;
+      li.appendChild(a);
+      list.appendChild(li);
+      links.push(a);
+    });
+    toc.hidden = false;
+    if (!('IntersectionObserver' in window)) return;
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        links.forEach(function (l) { l.classList.toggle('active', l.getAttribute('href') === '#' + e.target.id); });
+      });
+    }, { rootMargin: '0px 0px -70% 0px' });
+    heads.forEach(function (h) { io.observe(h); });
+  })();
+
   window.MathJax = {
     tex: {
       inlineMath: [['$', '$'], ['\\(', '\\)']],

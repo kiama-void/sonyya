@@ -1,0 +1,597 @@
+---
+layout: default
+title: Write
+permalink: /admin/
+sitemap: false
+noindex: true
+---
+
+<style>
+  .admin { max-width: 760px; margin: 0 auto; }
+  .admin h1 {
+    font-family: var(--serif); font-weight: 400; font-size: 2.4rem;
+    letter-spacing: -0.025em; line-height: 1.12; margin: 0 0 8px;
+  }
+  .admin .sub { color: var(--muted); font-size: 15px; margin: 0 0 40px; }
+  .admin .panel {
+    border: 1px solid var(--line); border-radius: 12px;
+    padding: 24px; margin-bottom: 24px; background: var(--bg);
+  }
+  .admin label {
+    display: block; font-family: var(--mono); font-size: 11px;
+    letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted);
+    margin: 0 0 6px;
+  }
+  .admin .field { margin-bottom: 18px; }
+  .admin .row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .admin input, .admin textarea, .admin select {
+    width: 100%; font: inherit; font-size: 15px; color: var(--ink);
+    background: #fff; border: 1px solid var(--line); border-radius: 8px;
+    padding: 10px 12px; outline: none;
+  }
+  .admin input:focus, .admin textarea:focus, .admin select:focus {
+    border-color: var(--ink);
+  }
+  .admin textarea {
+    font-family: var(--mono); font-size: 14px; line-height: 1.6;
+    min-height: 420px; resize: vertical;
+  }
+  .admin .btns { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .admin button {
+    font: inherit; font-size: 14px; cursor: pointer;
+    padding: 8px 18px; border-radius: 999px;
+    border: 1px solid var(--line); background: var(--bg); color: var(--ink);
+  }
+  .admin button:hover { background: var(--surface); }
+  .admin button.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .admin button.primary:hover { opacity: 0.85; }
+  .admin button.danger { color: #b3261e; border-color: rgba(179, 38, 30, 0.35); }
+  .admin button.danger:hover { background: rgba(179, 38, 30, 0.08); }
+  .admin .badge {
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--accent); background: var(--surface); padding: 4px 10px; border-radius: 999px;
+  }
+  .admin .manage {
+    display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+    margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--line);
+  }
+  .admin .manage .hint { margin: 0 0 0 4px; }
+  .admin button:disabled { opacity: 0.5; cursor: default; }
+  .admin .status { font-size: 14px; color: var(--muted); margin-left: 6px; }
+  .admin .status.ok { color: #4a7a4a; }
+  .admin .status.err { color: var(--accent); }
+  .admin .hint { font-size: 13px; color: var(--muted); margin: 8px 0 0; }
+  .admin .hint a { color: var(--ink); }
+  .admin .hidden { display: none; }
+  .admin .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 3px; background: #fff; }
+  .admin .seg button { border: 0; padding: 6px 16px; background: transparent; }
+  .admin .seg button.on { background: var(--ink); color: var(--bg); }
+  .admin.is-thought .article-only { display: none; }
+  .admin.is-thought textarea { min-height: 180px; font-family: var(--serif); font-size: 19px; }
+  .admin .tag-suggest { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .admin .tag-suggest button { font-size: 12px; padding: 3px 10px; color: var(--muted); }
+  .admin .tag-suggest button:hover { color: var(--ink); }
+  .admin .count { font-size: 13px; color: var(--muted); margin: 6px 0 0; text-align: right; }
+  @media (max-width: 680px) { .admin .row { grid-template-columns: 1fr; } }
+</style>
+
+<div class="admin"
+     data-repo="{{ site.github_repo }}"
+     data-branch="{{ site.github_branch | default: 'main' }}"
+     data-baseurl="{{ site.baseurl }}"
+     data-siteurl="{{ site.url }}"
+     {%- assign all_items = site.posts | concat: site.thoughts -%}
+     {%- capture tagstr -%}{%- for i in all_items -%}{%- for t in i.tags -%}{{ t | slugify }}|{%- endfor -%}{%- endfor -%}{%- endcapture -%}
+     {%- capture topicstr -%}{%- for i in site.posts -%}{%- for c in i.categories -%}{{ c | slugify }}|{%- endfor -%}{%- endfor -%}{%- endcapture -%}
+     data-tags="{{ tagstr | split: '|' | uniq | sort | join: ',' }}"
+     data-topics="{{ topicstr | split: '|' | uniq | sort | join: ',' }}">
+
+  <h1>Write</h1>
+  <p class="sub">Publishes straight to GitHub. The site updates about a minute after you hit Publish.</p>
+
+  <!-- Step 1: token -->
+  <section class="panel" id="login">
+    <div class="field">
+      <label for="token">GitHub access token</label>
+      <input id="token" type="password" autocomplete="off" placeholder="github_pat_…">
+      <p class="hint">
+        Fine-grained token with access to <strong>only this repo</strong> and
+        <strong>Contents: Read and write</strong>.
+        <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">Create one</a>.
+        Stored only in this browser.
+      </p>
+    </div>
+    <div class="btns">
+      <button class="primary" id="connect">Unlock</button>
+      <span class="status" id="login-status"></span>
+    </div>
+  </section>
+
+  <!-- Step 2: editor -->
+  <section id="editor" class="hidden">
+    <div class="panel">
+      <div class="row">
+        <div class="field">
+          <label>Type</label>
+          <div class="seg" id="kind">
+            <button type="button" data-kind="article" class="on">Article</button>
+            <button type="button" data-kind="thought">Thought</button>
+          </div>
+        </div>
+        <div class="field">
+          <label for="existing">Edit existing</label>
+          <select id="existing"><option value="">+ New</option></select>
+        </div>
+      </div>
+      <div class="field">
+        <label for="title" id="title-label">Title</label>
+        <input id="title" placeholder="Understanding attention from scratch">
+      </div>
+      <div class="row article-only">
+        <div class="field">
+          <label for="date">Date</label>
+          <input id="date" type="date">
+        </div>
+        <div class="field">
+          <label for="categories">Topic (one, broad)</label>
+          <input id="categories" placeholder="machine-learning" list="topic-list">
+          <datalist id="topic-list"></datalist>
+        </div>
+      </div>
+      <div class="field article-only">
+        <label for="description">One-line description</label>
+        <input id="description" placeholder="Shown under the title on the home page.">
+      </div>
+      <div class="field">
+        <label for="tags">Tags (comma separated)</label>
+        <input id="tags" placeholder="embeddings, nlp, paper-notes" autocomplete="off">
+        <div class="tag-suggest" id="tag-suggest"></div>
+      </div>
+      <p class="hint" id="mention-hint">Use @name for organizations, people, products and papers (e.g. @anthropic). They're linked and filterable automatically.</p>
+      <div class="field">
+        <label for="body" id="body-label">Body (Markdown, $math$ works)</label>
+        <textarea id="body" placeholder="Write here…"></textarea>
+      </div>
+      <div class="btns">
+        <button class="primary" id="publish">Publish</button>
+        <button id="clear">New</button>
+        <span class="badge hidden" id="archived-badge">Archived</span>
+        <span class="status" id="status"></span>
+      </div>
+      <div class="manage hidden" id="manage">
+        <button id="archive">Archive (hide)</button>
+        <button class="danger" id="destroy">Delete permanently</button>
+        <p class="hint">Archive hides it from the site but keeps the file, so you can restore it. Delete removes the file.</p>
+      </div>
+    </div>
+    <div class="btns">
+      <button id="logout">Lock &amp; forget token</button>
+    </div>
+  </section>
+</div>
+
+{% raw %}
+<script>
+(() => {
+  const root = document.querySelector('.admin');
+  const REPO = root.dataset.repo;
+  const BRANCH = root.dataset.branch;
+  const BASEURL = root.dataset.baseurl;
+  const SITEURL = root.dataset.siteurl;
+  const API = 'https://api.github.com';
+  const KEY = 'blog-admin-token';
+  const DRAFT = 'blog-admin-draft';
+
+  const $ = (id) => document.getElementById(id);
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch {} },
+    del(k) { try { localStorage.removeItem(k); } catch {} },
+  };
+
+  let token = store.get(KEY) || '';
+  let current = null; // { path, sha } when editing an existing post
+  let kind = 'article';
+
+  // ---------- helpers ----------
+  const b64encode = (str) => {
+    const bytes = new TextEncoder().encode(str);
+    let bin = '';
+    bytes.forEach((b) => (bin += String.fromCharCode(b)));
+    return btoa(bin);
+  };
+  const b64decode = (b64) => {
+    const bin = atob(b64.replace(/\n/g, ''));
+    return new TextDecoder().decode(Uint8Array.from(bin, (c) => c.charCodeAt(0)));
+  };
+  const slugify = (s) => s.toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80);
+  const today = () => {
+    const d = new Date();
+    return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+  };
+  const yamlStr = (s) => JSON.stringify(s || '');
+  const pad = (n) => String(n).padStart(2, '0');
+  const nowStamp = () => {
+    const d = new Date();
+    const off = -d.getTimezoneOffset();
+    const sign = off >= 0 ? '+' : '-';
+    const tz = sign + pad(Math.floor(Math.abs(off) / 60)) + pad(Math.abs(off) % 60);
+    return {
+      file: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`,
+      date: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())} ${tz}`,
+    };
+  };
+  const tagList = () => $('tags').value.split(',').map((t) => slugify(t)).filter(Boolean)
+    .filter((t, i, a) => a.indexOf(t) === i);
+  const tagsLine = () => 'tags: [' + tagList().join(', ') + ']';
+  const KNOWN_TAGS = (root.dataset.tags || '').split(',').filter(Boolean);
+  const KNOWN_TOPICS = (root.dataset.topics || '').split(',').filter(Boolean);
+  function renderTagSuggest() {
+    const box = $('tag-suggest');
+    const have = tagList();
+    const typing = slugify(($('tags').value.split(',').pop() || ''));
+    box.innerHTML = '';
+    KNOWN_TAGS.filter((t) => !have.includes(t) && (!typing || t.includes(typing)))
+      .slice(0, 24).forEach((t) => {
+        const b = document.createElement('button');
+        b.type = 'button'; b.textContent = '#' + t;
+        b.addEventListener('click', () => {
+          const parts = $('tags').value.split(',').map((x) => x.trim()).filter(Boolean);
+          if (typing && parts.length && t.includes(slugify(parts[parts.length - 1]))) parts.pop();
+          parts.push(t);
+          $('tags').value = parts.join(', ') + ', ';
+          $('tags').focus(); renderTagSuggest(); saveDraft();
+        });
+        box.appendChild(b);
+      });
+  }
+  // @mentions: collected from the body, ignoring code and email addresses
+  const mentionList = () => {
+    const text = $('body').value.replace(/```[\s\S]*?```/g, ' ').replace(/`[^`]*`/g, ' ');
+    const re = /(^|[^\w@\/.])@([a-z0-9](?:[a-z0-9_-]*[a-z0-9])?)/gi;
+    const out = []; let m;
+    while ((m = re.exec(text))) { const h = m[2].toLowerCase(); if (!out.includes(h)) out.push(h); }
+    return out;
+  };
+  const mentionsLine = () => { const m = mentionList(); return m.length ? ['mentions: [' + m.join(', ') + ']'] : []; };
+  function updateMentionHint() {
+    const m = mentionList();
+    $('mention-hint').textContent = m.length
+      ? 'Mentions: ' + m.map((h) => '@' + h).join(' ')
+      : 'Use @name for organizations, people, products and papers (e.g. @anthropic). They\'re linked and filterable automatically.';
+  }
+  function setKind(k) {
+    kind = k;
+    $('title-label').textContent = k === 'thought' ? 'Title (optional)' : 'Title';
+    $('title').placeholder = k === 'thought' ? 'Leave empty for a plain thought' : 'Understanding attention from scratch';
+    root.classList.toggle('is-thought', k === 'thought');
+    document.querySelectorAll('#kind button').forEach((b) => b.classList.toggle('on', b.dataset.kind === k));
+    $('body-label').textContent = k === 'thought' ? 'Thought' : 'Body (Markdown, $math$ works)';
+    $('body').placeholder = k === 'thought' ? 'What are you thinking?' : 'Write here…';
+  }
+  const setStatus = (el, msg, kind = '') => { el.textContent = msg; el.className = 'status ' + kind; };
+
+  async function gh(path, opts = {}) {
+    const res = await fetch(API + path, {
+      ...opts,
+      headers: {
+        Accept: 'application/vnd.github+json',
+        Authorization: 'Bearer ' + token,
+        'X-GitHub-Api-Version': '2022-11-28',
+        ...(opts.body ? { 'Content-Type': 'application/json' } : {}),
+      },
+    });
+    if (!res.ok) {
+      let msg = res.status + ' ' + res.statusText;
+      try { msg = (await res.json()).message || msg; } catch {}
+      const err = new Error(msg); err.status = res.status; throw err;
+    }
+    return res.status === 204 ? null : res.json();
+  }
+
+  // Turn GitHub errors into something actionable
+  function explain(e) {
+    if (e.status === 401) return 'Token rejected or expired. Lock, then unlock with a fresh token.';
+    if (e.status === 403 || /not accessible by personal access token/i.test(e.message)) {
+      return 'This token can read but not write. On GitHub open Settings → Developer settings → '
+        + 'Fine-grained tokens → your token → Edit, set Repository access to include ' + REPO
+        + ' and Repository permissions → Contents to "Read and write", then Update token. '
+        + '(Same token keeps working, no need to paste again.)';
+    }
+    if (e.status === 409) return 'This file changed on GitHub since you opened it. Re-open it from the list and try again.';
+    return e.message;
+  }
+
+  // Soft delete = "published: false" in front matter: the file stays in the repo, the page disappears.
+  const archivedLine = () => (current && current.archived ? ['published: false'] : []);
+
+  // ---------- front matter ----------
+  function buildFile(thoughtDate) {
+    if (kind === 'thought') {
+      const heading = $('title').value.trim();
+      return ['---', 'date: ' + thoughtDate, ...(heading ? ['heading: ' + yamlStr(heading)] : []),
+        tagsLine(), ...mentionsLine(), ...archivedLine(),
+        '---', '', $('body').value.trim() + '\n'].join('\n');
+    }
+    const title = $('title').value.trim();
+    const cats = $('categories').value.split(',').map((c) => slugify(c)).filter(Boolean);
+    const body = $('body').value.replace(/\s+$/, '') + '\n';
+    const words = body.split(/\s+/).filter(Boolean).length;
+    const mins = Math.max(1, Math.round(words / 220));
+    return [
+      '---',
+      'layout: post',
+      'title: ' + yamlStr(title),
+      'date: ' + $('date').value,
+      'categories: [' + cats.join(', ') + ']',
+      tagsLine(),
+      ...mentionsLine(),
+      'description: ' + yamlStr($('description').value.trim()),
+      'reading_time: ' + yamlStr(mins + ' min read'),
+      ...archivedLine(),
+      '---',
+      '',
+      body,
+    ].join('\n');
+  }
+
+  function parseFile(text) {
+    const m = text.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
+    const fm = {}; let body = text;
+    if (m) {
+      body = m[2].replace(/^\n/, '');
+      m[1].split('\n').forEach((line) => {
+        const i = line.indexOf(':');
+        if (i > 0) fm[line.slice(0, i).trim()] = line.slice(i + 1).trim();
+      });
+    }
+    const unq = (v) => {
+      if (!v) return '';
+      if (v.startsWith('"')) { try { return JSON.parse(v); } catch {} }
+      return v.replace(/^'|'$/g, '');
+    };
+    return {
+      title: unq(fm.title) || unq(fm.heading),
+      date: (fm.date || '').slice(0, 10),
+      rawDate: fm.date || '',
+      categories: (fm.categories || '').replace(/^\[|\]$/g, '').split(/[,\s]+/).filter(Boolean).join(', '),
+      description: unq(fm.description),
+      archived: String(fm.published).toLowerCase() === 'false',
+      tags: (fm.tags || '').replace(/^\[|\]$/g, '').split(/[,\s]+/).map((t) => unq(t.trim())).filter(Boolean).join(', '),
+      body,
+    };
+  }
+
+  // ---------- form ----------
+  function fillForm(p) {
+    $('title').value = p.title || '';
+    $('date').value = p.date || today();
+    $('categories').value = p.categories || '';
+    $('description').value = p.description || '';
+    $('tags').value = p.tags || '';
+    renderTagSuggest();
+    updateMentionHint();
+    $('body').value = p.body || '';
+  }
+  function resetForm() {
+    current = null;
+    $('existing').disabled = false;
+    $('existing').value = '';
+    fillForm({});
+    store.del(DRAFT);
+    setStatus($('status'), '');
+    $('publish').textContent = 'Publish';
+    showManage();
+  }
+  // Archive / Delete buttons only apply to an existing post
+  function showManage() {
+    const on = !!current;
+    $('manage').classList.toggle('hidden', !on);
+    $('archived-badge').classList.toggle('hidden', !(on && current.archived));
+    if (on) $('archive').textContent = current.archived ? 'Restore' : 'Archive (hide)';
+  }
+  function saveDraft() {
+    if (current) return;
+    store.set(DRAFT, JSON.stringify({
+      kind,
+      title: $('title').value, date: $('date').value, categories: $('categories').value,
+      description: $('description').value, tags: $('tags').value, body: $('body').value,
+    }));
+  }
+
+  async function loadList() {
+    const sel = $('existing');
+    sel.length = 1;
+    const dir = kind === 'thought' ? '_thoughts' : '_posts';
+    try {
+      const files = await gh(`/repos/${REPO}/contents/${dir}?ref=${BRANCH}`);
+      files.filter((f) => f.name.endsWith('.md') || f.name.endsWith('.markdown'))
+        .sort((a, b) => b.name.localeCompare(a.name))
+        .forEach((f) => {
+          const o = document.createElement('option');
+          o.value = f.path; o.textContent = f.name.replace(/\.(md|markdown)$/, '');
+          sel.appendChild(o);
+        });
+    } catch (e) {
+      if (e.status !== 404) setStatus($('status'), 'Could not list: ' + e.message, 'err');
+    }
+  }
+
+  // ---------- actions ----------
+  async function unlock() {
+    const btn = $('connect'), st = $('login-status');
+    token = $('token').value.trim() || token;
+    if (!token) return setStatus(st, 'Paste a token first.', 'err');
+    btn.disabled = true; setStatus(st, 'Checking…');
+    try {
+      const repo = await gh(`/repos/${REPO}`);
+      if (!repo.permissions || !repo.permissions.push) throw new Error('This token cannot write to ' + REPO + '.');
+      store.set(KEY, token);
+      $('token').value = '';
+      $('login').classList.add('hidden');
+      $('editor').classList.remove('hidden');
+      const draft = store.get(DRAFT);
+      const d = draft ? JSON.parse(draft) : {};
+      setKind(d.kind === 'thought' ? 'thought' : 'article');
+      fillForm(d);
+      loadList();
+    } catch (e) {
+      token = ''; store.del(KEY);
+      setStatus(st, e.status === 401 ? 'Token rejected.' : e.message, 'err');
+    } finally { btn.disabled = false; }
+  }
+
+  async function openExisting() {
+    const path = $('existing').value;
+    if (!path) return resetForm();
+    setStatus($('status'), 'Loading…');
+    try {
+      const f = await gh(`/repos/${REPO}/contents/${encodeURI(path)}?ref=${BRANCH}`);
+      const parsed = parseFile(b64decode(f.content));
+      current = { path: f.path, sha: f.sha, rawDate: parsed.rawDate, archived: parsed.archived };
+      fillForm(parsed);
+      $('publish').textContent = 'Save changes';
+      setStatus($('status'), '');
+      showManage();
+    } catch (e) { setStatus($('status'), explain(e), 'err'); }
+  }
+
+  // Soft delete / restore: re-save the file with or without "published: false"
+  async function toggleArchive() {
+    if (!current) return;
+    const goingArchived = !current.archived;
+    if (goingArchived && !confirm('Archive this? It disappears from the site but stays in the repo, so you can restore it any time.')) return;
+    current.archived = goingArchived;
+    const ok = await publish(goingArchived ? 'Archive' : 'Restore');
+    if (!ok) current.archived = !goingArchived;
+    showManage();
+  }
+
+  // Hard delete: remove the file from the repo (still recoverable from git history)
+  async function destroy() {
+    if (!current) return;
+    const name = current.path.split('/').pop();
+    const typed = prompt('Permanently delete "' + name + '"?\nThis removes the file from the repo. Type DELETE to confirm.');
+    if (typed !== 'DELETE') return;
+    const st = $('status');
+    setStatus(st, 'Deleting…');
+    try {
+      await gh(`/repos/${REPO}/contents/${encodeURI(current.path)}`, {
+        method: 'DELETE',
+        body: JSON.stringify({ message: 'Delete ' + current.path, sha: current.sha, branch: BRANCH }),
+      });
+      resetForm();
+      setStatus(st, 'Deleted. Gone from the site in ~1 min.', 'ok');
+      loadList();
+    } catch (e) { setStatus(st, 'Failed: ' + explain(e), 'err'); }
+  }
+
+  async function publish(action) {
+    if (typeof action !== 'string') action = '';
+    const st = $('status'), btn = $('publish');
+    const isThought = kind === 'thought';
+    const title = $('title').value.trim();
+    const date = $('date').value;
+    if (!$('body').value.trim()) return setStatus(st, 'Write something first.', 'err');
+    if (!isThought && !title) return setStatus(st, 'Add a title.', 'err');
+    if (!isThought && !date) return setStatus(st, 'Add a date.', 'err');
+
+    let path, content;
+    if (isThought) {
+      const stamp = nowStamp();
+      path = current ? current.path : `_thoughts/${stamp.file}.md`;
+      content = buildFile(current && current.rawDate ? current.rawDate : stamp.date);
+    } else {
+      path = current ? current.path : `_posts/${date}-${slugify(title) || 'post'}.md`;
+      content = buildFile();
+    }
+    const label = isThought ? $('body').value.trim().slice(0, 50) : title;
+    const payload = {
+      message: (action || (current ? 'Update' : 'New')) + (isThought ? ' thought: ' : ' post: ') + label,
+      content: b64encode(content),
+      branch: BRANCH,
+      ...(current ? { sha: current.sha } : {}),
+    };
+
+    btn.disabled = true; setStatus(st, 'Publishing…');
+    try {
+      const res = await gh(`/repos/${REPO}/contents/${encodeURI(path)}`, {
+        method: 'PUT', body: JSON.stringify(payload),
+      });
+      const wasNew = !current;
+      current = { ...(current || {}), path: res.content.path, sha: res.content.sha };
+      store.del(DRAFT);
+
+      const name = path.split('/').pop().replace(/\.(md|markdown)$/, '');
+      let url;
+      if (isThought) {
+        url = SITEURL + BASEURL + '/thoughts/' + name + '/';
+      } else {
+        const cats = $('categories').value.split(',').map((c) => slugify(c)).filter(Boolean);
+        url = SITEURL + BASEURL + '/' + (cats.length ? cats.join('/') + '/' : '') + name.replace(/^\d{4}-\d{2}-\d{2}-/, '') + '/';
+      }
+      st.className = 'status ok';
+      st.innerHTML = '';
+      if (action === 'Archive') {
+        st.append('Archived. Hidden from the site in ~1 min. Use Restore to bring it back.');
+      } else {
+        st.append((action === 'Restore' ? 'Restored' : 'Published') + '. Live in ~1 min: ');
+        const a = document.createElement('a'); a.href = url; a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'open';
+        st.append(a);
+        if (!isThought && date > today()) st.append(' (future date: it will appear on ' + date + ')');
+      }
+
+      if (isThought && wasNew) {
+        // Ready for the next thought
+        current = null; $('body').value = ''; $('tags').value = ''; $('title').value = ''; renderTagSuggest(); updateMentionHint();
+        loadList();
+      } else {
+        $('publish').textContent = 'Save changes';
+        showManage();
+        loadList().then(() => { $('existing').value = current.path; });
+      }
+      return true;
+    } catch (e) {
+      setStatus(st, e.status === 422 && !current
+        ? 'A post with this date and title already exists. Pick it from the list to edit it.'
+        : 'Failed: ' + explain(e), 'err');
+      return false;
+    } finally { btn.disabled = false; }
+  }
+
+  function logout() {
+    token = ''; store.del(KEY);
+    $('editor').classList.add('hidden');
+    $('login').classList.remove('hidden');
+    setStatus($('login-status'), 'Locked.');
+  }
+
+  // ---------- wire up ----------
+  document.querySelectorAll('#kind button').forEach((b) => b.addEventListener('click', () => {
+    if (b.dataset.kind === kind) return;
+    resetForm();
+    setKind(b.dataset.kind);
+    loadList();
+  }));
+  $('connect').addEventListener('click', unlock);
+  $('token').addEventListener('keydown', (e) => { if (e.key === 'Enter') unlock(); });
+  $('existing').addEventListener('change', openExisting);
+  $('publish').addEventListener('click', publish);
+  $('clear').addEventListener('click', resetForm);
+  $('archive').addEventListener('click', toggleArchive);
+  $('destroy').addEventListener('click', destroy);
+  $('logout').addEventListener('click', logout);
+  $('tags').addEventListener('input', renderTagSuggest);
+  $('body').addEventListener('input', updateMentionHint);
+  KNOWN_TOPICS.forEach((t) => { const o = document.createElement('option'); o.value = t; $('topic-list').appendChild(o); });
+  ['title', 'date', 'categories', 'description', 'tags', 'body'].forEach((id) =>
+    $(id).addEventListener('input', saveDraft));
+  $('body').addEventListener('keydown', (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 's') { e.preventDefault(); publish(); }
+  });
+
+  if (token) unlock();
+})();
+</script>
+{% endraw %}

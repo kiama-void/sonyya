@@ -1,0 +1,14 @@
+# Registry for @mentions. Optional: any @name works without an entry here.
+# Add one when you want a proper display name, a type, and a link.
+#
+# handle (lowercase, a-z 0-9 - _):
+#   name:  Display name
+#   kind:  company | lab | person | product | paper | project | place | book
+#   url:   https://…
+#   note:  one line about it (optional)
+
+anthropic:
+  name: Anthropic
+  kind: company
+  url: https://www.anthropic.com
+  note: AI safety and research company.

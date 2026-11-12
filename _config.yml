@@ -7,7 +7,24 @@ description: >-
 baseurl: "/sonyya"
 url: "https://kiama-void.github.io"
 
+# Used by the /admin/ writing page to publish via the GitHub API
+github_repo: "kiama-void/sonyya"
+github_branch: "main"
+
 permalink: /:categories/:title/
+
+# Short posts (like tweets). Files live in _thoughts/
+collections:
+  thoughts:
+    output: true
+    permalink: /thoughts/:name/
+
+defaults:
+  - scope:
+      path: ""
+      type: thoughts
+    values:
+      layout: thought
 
 markdown: kramdown
 highlighter: rouge
@@ -27,3 +44,6 @@ exclude:
   - vendor/
   - node_modules/
   - README.md
+  - serve.sh
+  - Gemfile
+  - Gemfile.lock

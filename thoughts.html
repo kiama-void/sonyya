@@ -1,0 +1,21 @@
+---
+layout: page
+title: Thoughts
+permalink: /thoughts/
+---
+
+<p class="page-lead">Short notes and points of view. Smaller than an article, written as they come.</p>
+
+{% assign thoughts = site.thoughts | sort: 'date' | reverse %}
+{% if thoughts.size == 0 %}
+  <p class="empty">Nothing here yet.</p>
+{% endif %}
+{% assign groups = thoughts | group_by_exp: 't', "t.date | date: '%B %Y'" %}
+{% for g in groups %}
+  <section class="thought-month">
+    <h2 class="month-label">{{ g.name }}</h2>
+    {% for t in g.items %}
+      {% include thought-card.html thought=t %}
+    {% endfor %}
+  </section>
+{% endfor %}

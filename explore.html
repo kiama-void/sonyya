@@ -1,0 +1,148 @@
+---
+layout: page
+title: Explore
+permalink: /explore/
+---
+
+<p class="page-lead">Everything, filterable by type, year, topic, tag and mention.</p>
+
+{% assign items = site.posts | concat: site.thoughts | sort: 'date' | reverse %}
+
+<div class="explore" id="explore">
+  <div class="x-controls">
+    <input class="x-search" id="x-search" type="search" placeholder="Search titles and text…" aria-label="Search">
+    <div class="x-facet" data-facet="type"><span class="x-facet-label">Type</span><div class="x-chips"></div></div>
+    <div class="x-facet" data-facet="year"><span class="x-facet-label">Year</span><div class="x-chips"></div></div>
+    <div class="x-facet" data-facet="topic"><span class="x-facet-label">Topic</span><div class="x-chips"></div></div>
+    <div class="x-facet" data-facet="tag"><span class="x-facet-label">Tags</span><div class="x-chips"></div></div>
+    <div class="x-facet" data-facet="at"><span class="x-facet-label">Mentions</span><div class="x-chips"></div></div>
+  </div>
+
+  <div class="x-results">
+    {% for m in site.data.mentions %}
+      <div class="x-entity" data-handle="{{ m[0] }}" hidden>
+        <p class="x-entity-handle">@{{ m[0] }}{% if m[1].kind %} · {{ m[1].kind }}{% endif %}</p>
+        <h2 class="x-entity-name">{{ m[1].name | default: m[0] }}</h2>
+        {% if m[1].note %}<p class="x-entity-note">{{ m[1].note }}</p>{% endif %}
+        {% if m[1].url %}<a class="x-entity-link" href="{{ m[1].url }}" target="_blank" rel="noopener">{{ m[1].url | remove: 'https://' | remove: 'http://' | remove: 'www.' }} ↗</a>{% endif %}
+      </div>
+    {% endfor %}
+    <div class="x-summary"><span id="x-count">{{ items.size }}</span> <span id="x-noun">items</span> <button type="button" class="x-clear" id="x-clear" hidden>Clear filters</button></div>
+    <ol class="x-list" id="x-list">
+      {% for it in items %}
+        {% assign is_thought = false %}
+        {% if it.collection == 'thoughts' %}{% assign is_thought = true %}{% endif %}
+        {% capture tagslugs %}{% for t in it.tags %}{{ t | slugify }}{% unless forloop.last %},{% endunless %}{% endfor %}{% endcapture %}
+        <li class="x-item"
+            data-type="{% if is_thought %}thought{% else %}article{% endif %}"
+            data-year="{{ it.date | date: '%Y' }}"
+            data-topic="{% unless is_thought %}{{ it.categories | first | slugify }}{% endunless %}"
+            data-tags="{{ tagslugs | strip }}"
+            data-at="{{ it.mentions | join: ',' | downcase }}"
+            data-text="{{ it.title | default: '' | append: ' ' | append: it.heading | append: ' ' | append: it.description | append: ' ' | append: it.content | strip_html | normalize_whitespace | downcase | truncate: 600 | escape }}">
+          <time datetime="{{ it.date | date_to_xmlschema }}">{{ it.date | date: "%b %-d, %Y" }}</time>
+          <div class="x-main">
+            {% if is_thought %}
+              {% if it.heading %}<a class="x-title" href="{{ it.url | relative_url }}">{{ it.heading }}</a><p class="x-desc">{{ it.content | strip_html | normalize_whitespace | truncate: 220 }}</p>
+              {% else %}<a class="x-thought" href="{{ it.url | relative_url }}">{{ it.content | strip_html | normalize_whitespace | truncate: 220 }}</a>{% endif %}
+            {% else %}
+              <a class="x-title" href="{{ it.url | relative_url }}">{{ it.title }}</a>
+              {% if it.description %}<p class="x-desc">{{ it.description }}</p>{% endif %}
+            {% endif %}
+            <div class="x-meta">
+              <span class="x-type">{% if is_thought %}Thought{% else %}Article{% endif %}</span>
+              {% unless is_thought %}{% if it.categories.size > 0 %}<span class="x-topic">{{ it.categories | first | replace: '-', ' ' }}</span>{% endif %}{% endunless %}
+              {% include tag-list.html tags=it.tags %}
+              {% for h in it.mentions %}<a class="mention" href="{{ '/explore/' | relative_url }}?at={{ h | downcase }}">@{{ h }}</a>{% endfor %}
+            </div>
+          </div>
+        </li>
+      {% endfor %}
+    </ol>
+    <p class="empty" id="x-empty" hidden>Nothing matches these filters.</p>
+  </div>
+</div>
+
+<script>
+(function () {
+  var items = Array.prototype.slice.call(document.querySelectorAll('.x-item'));
+  var search = document.getElementById('x-search');
+  var state = { type: '', year: '', topic: '', tag: '', at: '', q: '' };
+  var params = new URLSearchParams(location.search);
+  Object.keys(state).forEach(function (k) { state[k] = params.get(k) || ''; });
+  search.value = state.q;
+
+  var labels = { type: { article: 'Articles', thought: 'Thoughts' } };
+  function values(el, facet) {
+    var v = el.dataset[facet] || '';
+    if (facet === 'tag') return el.dataset.tags ? el.dataset.tags.split(',') : [];
+    if (facet === 'at') return el.dataset.at ? el.dataset.at.split(',') : [];
+    return v ? [v] : [];
+  }
+  function matches(el, skip) {
+    for (var f of ['type', 'year', 'topic', 'tag', 'at']) {
+      if (f === skip || !state[f]) continue;
+      if (values(el, f).indexOf(state[f]) === -1) return false;
+    }
+    if (state.q && el.dataset.text.indexOf(state.q.toLowerCase()) === -1) return false;
+    return true;
+  }
+
+  function renderFacet(facet) {
+    var box = document.querySelector('[data-facet="' + facet + '"] .x-chips');
+    var counts = {};
+    items.forEach(function (el) {
+      if (!matches(el, facet)) return;
+      values(el, facet).forEach(function (v) { counts[v] = (counts[v] || 0) + 1; });
+    });
+    if (state[facet] && !counts[state[facet]]) counts[state[facet]] = 0;
+    var keys = Object.keys(counts);
+    keys.sort(facet === 'year' ? function (a, b) { return b.localeCompare(a); }
+      : (facet === 'tag' || facet === 'at') ? function (a, b) { return counts[b] - counts[a] || a.localeCompare(b); }
+      : function (a, b) { return a.localeCompare(b); });
+    box.innerHTML = '';
+    box.parentElement.hidden = keys.length === 0;
+    keys.forEach(function (k) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'x-chip' + (state[facet] === k ? ' on' : '');
+      var name = (labels[facet] && labels[facet][k]) || (facet === 'tag' ? '#' + k : facet === 'at' ? '@' + k : k.replace(/-/g, ' '));
+      b.textContent = name;
+      var c = document.createElement('span'); c.textContent = counts[k]; b.appendChild(c);
+      b.addEventListener('click', function () { state[facet] = state[facet] === k ? '' : k; update(); });
+      box.appendChild(b);
+    });
+  }
+
+  function update() {
+    var n = 0;
+    items.forEach(function (el) { var ok = matches(el); el.hidden = !ok; if (ok) n++; });
+    document.getElementById('x-count').textContent = n;
+    document.getElementById('x-noun').textContent = n === 1 ? 'item' : 'items';
+    document.getElementById('x-empty').hidden = n > 0;
+    var any = Object.keys(state).some(function (k) { return state[k]; });
+    document.getElementById('x-clear').hidden = !any;
+    ['type', 'year', 'topic', 'tag', 'at'].forEach(renderFacet);
+    document.querySelectorAll('.x-entity').forEach(function (e) { e.hidden = e.dataset.handle !== state.at; });
+    var p = new URLSearchParams();
+    Object.keys(state).forEach(function (k) { if (state[k]) p.set(k, state[k]); });
+    history.replaceState(null, '', location.pathname + (p.toString() ? '?' + p : ''));
+  }
+
+  search.addEventListener('input', function () { state.q = search.value.trim(); update(); });
+  document.getElementById('x-clear').addEventListener('click', function () {
+    Object.keys(state).forEach(function (k) { state[k] = ''; }); search.value = ''; update();
+  });
+  // Tag links inside results filter in place instead of reloading
+  document.getElementById('x-list').addEventListener('click', function (e) {
+    var a = e.target.closest('a.tag, a.mention'); if (!a) return;
+    e.preventDefault();
+    var u = new URL(a.href).searchParams;
+    if (u.get('tag')) state.tag = u.get('tag');
+    if (u.get('at')) state.at = u.get('at');
+    update();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+  update();
+})();
+</script>

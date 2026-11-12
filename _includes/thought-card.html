@@ -1,0 +1,8 @@
+<article class="thought-card">
+  {% if include.thought.heading %}<h3 class="thought-heading"><a href="{{ include.thought.url | relative_url }}">{{ include.thought.heading }}</a></h3>{% endif %}
+  <div class="thought-text">{{ include.thought.content }}</div>
+  <a class="thought-meta" href="{{ include.thought.url | relative_url }}">
+    <time datetime="{{ include.thought.date | date_to_xmlschema }}">{{ include.thought.date | date: "%b %-d, %Y" }}</time>
+  </a>
+  {% include tag-list.html tags=include.thought.tags %}
+</article>

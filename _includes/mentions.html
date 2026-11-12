@@ -1,0 +1,40 @@
+{%- comment -%}
+  Turns @handle in post/thought text into links to /explore/?at=handle.
+  Skips code, links, and email addresses. Registry: _data/mentions.yml
+{%- endcomment -%}
+<script>
+(function () {
+  var REG = {{ site.data.mentions | jsonify }} || {};
+  var BASE = {{ '/explore/' | relative_url | jsonify }};
+  var RE = /(^|[^\w@\/.])@([a-z0-9](?:[a-z0-9_-]*[a-z0-9])?)/gi;
+  var roots = document.querySelectorAll('.post-body, .thought-text, .thought-page-body, .page-body > p');
+  roots.forEach(function (root) {
+    var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode: function (n) {
+        if (!n.nodeValue || n.nodeValue.indexOf('@') === -1) return NodeFilter.FILTER_REJECT;
+        if (n.parentElement.closest('a, code, pre, .mention, .x-list')) return NodeFilter.FILTER_REJECT;
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    });
+    var nodes = []; while (walker.nextNode()) nodes.push(walker.currentNode);
+    nodes.forEach(function (node) {
+      var text = node.nodeValue, frag = document.createDocumentFragment(), last = 0, m;
+      RE.lastIndex = 0;
+      while ((m = RE.exec(text))) {
+        var start = m.index + m[1].length, handle = m[2].toLowerCase(), info = REG[handle];
+        frag.appendChild(document.createTextNode(text.slice(last, start)));
+        var a = document.createElement('a');
+        a.className = 'mention';
+        a.href = BASE + '?at=' + encodeURIComponent(handle);
+        a.textContent = '@' + m[2];
+        if (info && info.name) a.title = info.name + (info.kind ? ' · ' + info.kind : '');
+        frag.appendChild(a);
+        last = start + 1 + m[2].length;
+      }
+      if (last === 0) return;
+      frag.appendChild(document.createTextNode(text.slice(last)));
+      node.parentNode.replaceChild(frag, node);
+    });
+  });
+})();
+</script>
