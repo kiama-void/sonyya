@@ -4,7 +4,7 @@ author: Sonyya
 description: >-
   A research-oriented personal blog about AI, engineering, mathematics,
   and careful technical thinking.
-baseurl: ""
+baseurl: "/sonyya"
 url: "https://kiama-void.github.io"
 
 permalink: /:categories/:title/
