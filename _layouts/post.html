@@ -1,0 +1,42 @@
+---
+layout: default
+---
+
+<article class="post-article">
+  <header class="post-header">
+    <p class="eyebrow">{{ page.categories | join: ' / ' }}</p>
+    <h1>{{ page.title }}</h1>
+    <div class="post-meta">
+      <time datetime="{{ page.date | date_to_xmlschema }}">{{ page.date | date: "%B %-d, %Y" }}</time>
+      <span>·</span>
+      <span>{{ page.reading_time }}</span>
+    </div>
+  </header>
+
+  <div class="post-body">
+    {{ content }}
+  </div>
+
+  <nav class="post-nav" aria-label="Post navigation">
+    {% if page.previous %}
+      <a class="nav-link prev" href="{{ page.previous.url | relative_url }}">← {{ page.previous.title }}</a>
+    {% endif %}
+
+    {% if page.next %}
+      <a class="nav-link next" href="{{ page.next.url | relative_url }}">{{ page.next.title }} →</a>
+    {% endif %}
+  </nav>
+</article>
+
+<script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['$$', '$$'], ['\\[', '\\]']]
+    },
+    svg: {
+      fontCache: 'global'
+    }
+  };
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>

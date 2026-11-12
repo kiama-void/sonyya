@@ -1,0 +1,12 @@
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="{{ page.excerpt | default: site.description | strip_html | normalize_whitespace | truncate: 160 }}">
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="{{ '/assets/css/main.css' | relative_url }}">
+  <link rel="alternate" type="application/rss+xml" title="{{ site.title }}" href="{{ '/feed.xml' | relative_url }}">
+  {% seo %}
+  <title>
+    {% if page.title %}{{ page.title }}{% else %}{{ site.title }}{% endif %}
+  </title>
+</head>
