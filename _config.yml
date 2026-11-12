@@ -11,6 +11,11 @@ url: "https://kiama-void.github.io"
 github_repo: "kiama-void/sonyya"
 github_branch: "main"
 
+# "Write about it later" ideas, managed from /admin/. Stored in this repo under
+# _ideas/ (folders starting with _ are not published, so ideas never appear on the site).
+ideas_repo: "kiama-void/sonyya"
+ideas_path: "_ideas/ideas.json"
+
 permalink: /:categories/:title/
 
 # Short posts (like tweets). Files live in _thoughts/
