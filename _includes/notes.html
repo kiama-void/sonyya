@@ -26,3 +26,27 @@
   });
 })();
 </script>
+<script>
+/* Cards whose first line is a bold title collapse to that title. Click or Enter/Space toggles. */
+(function () {
+  document.querySelectorAll('blockquote.note').forEach(function (note) {
+    var head = note.firstElementChild;
+    if (!head || head.tagName !== 'P' || head.children.length !== 1 ||
+        head.firstElementChild.tagName !== 'STRONG' ||
+        head.textContent.trim() !== head.firstElementChild.textContent.trim()) return;
+    note.classList.add('collapsible', 'collapsed');
+    head.classList.add('note-head');
+    head.setAttribute('role', 'button');
+    head.setAttribute('tabindex', '0');
+    head.setAttribute('aria-expanded', 'false');
+    function toggle() {
+      var open = note.classList.toggle('collapsed') === false;
+      head.setAttribute('aria-expanded', String(open));
+    }
+    head.addEventListener('click', toggle);
+    head.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
+    });
+  });
+})();
+</script>

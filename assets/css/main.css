@@ -948,6 +948,23 @@ details.thought-card[open] .thought-title { display: block; }
 blockquote.note > :last-child { margin-bottom: 0; }
 blockquote.note.misconception { --note-color: var(--accent); }
 blockquote.note.aside { --note-color: var(--muted); }
+blockquote.note.collapsible > .note-head {
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  user-select: none;
+}
+blockquote.note.collapsible > .note-head::after {
+  content: "−";
+  font: 400 18px/1 var(--sans);
+  color: var(--muted);
+}
+blockquote.note.collapsed > .note-head::after { content: "+"; }
+blockquote.note.collapsed > .note-head { margin-bottom: 0; }
+blockquote.note.collapsed > :not(.note-head) { display: none; }
+blockquote.note.collapsible > .note-head:focus-visible { outline: 2px solid var(--accent-soft); outline-offset: 4px; border-radius: 4px; }
 .note-thread {
   margin: 14px 0 0 !important;
   padding-top: 10px;
