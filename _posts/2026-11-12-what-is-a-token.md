@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "What is a token?"
+title: "Token"
 categories: [tokenization]
 tags: [llm, tokenization]
 ---
@@ -29,8 +29,8 @@ Two things I had wrong going in. They were my assumptions, not necessarily yours
 
 > **Does a token have its own vector?**
 >
-> No. The vector belongs to the model, not the token.
-> The embedding row is only a starting point. "Bank" starts from the same row in *river bank* and *bank account*. The model's layers reshape it using context.
+> Yes , but only a starting point
+> "Bank" starts from the same row in *river bank* and *bank account*. The model's layers reshape it using context.
 {: .note data-thread="embedding-training"}
 
 <!-- TODO (Q4): Add the emoji figure. Show one emoji, its token IDs, and each token decoded on its own (the unreadable symbols). -->
@@ -58,7 +58,7 @@ Text can be split at any level: sentence, word, subword, character, byte.
 > | Tokens (o200k_base) | ~1,260 |
 > | Characters | ~5,600 |
 >
-> Characters make the sequence about 4.5× longer than tokens do. Attention compares every token with every other one, so its cost grows with the square of the length. A sequence 5× longer costs about 25× more.
+> Characters make the sequence longer than tokens do. Attention compares every token with every other one, so its cost grows with the square of the length. 
 {: .note .misconception}
 
 | | Vocabulary size | [Sequence length](#term:sequence-length) | Unseen words | Related words share pieces |
