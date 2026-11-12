@@ -1,0 +1,4 @@
+{%- assign ex = site.data.experiments[include.id] -%}
+{%- if ex -%}
+<p class="experiment-tag"><a href="https://github.com/{{ site.github_repo }}/blob/{{ site.github_branch | default: 'main' }}/{{ ex.notebook }}" target="_blank" rel="noopener"><span>Experiment</span>{{ ex.title }} ↗</a></p>
+{%- endif -%}

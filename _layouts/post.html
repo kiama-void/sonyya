@@ -16,10 +16,15 @@ layout: default
         {% if page.categories.size > 0 %}
         <div><dt>Topic</dt><dd class="post-tags">{% for c in page.categories %}<a href="{{ '/explore/' | relative_url }}?topic={{ c | slugify }}">{{ c | replace: '-', ' ' }}</a>{% endfor %}</dd></div>
         {% endif %}
+        {% if page.notebook %}<div><dt>Notebook</dt><dd><a href="{{ page.notebook }}" target="_blank" rel="noopener">Open on GitHub ↗</a></dd></div>{% endif %}
         {% if page.tags.size > 0 %}
         <div><dt>Tags</dt><dd>{% include tag-list.html tags=page.tags %}</dd></div>
         {% endif %}
       </dl>
+      <section class="post-terms" id="post-terms" aria-label="Terms" hidden>
+        <p class="post-toc-label">Terms</p>
+        <dl></dl>
+      </section>
       <nav class="post-toc" id="post-toc" aria-label="On this page" hidden>
         <p class="post-toc-label">On this page</p>
         <ol></ol>

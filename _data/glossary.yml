@@ -1,0 +1,9 @@
+# Terms shown in a post's sidebar. In Markdown: [sequence length](#term:sequence-length)
+# A post that explains a term lists it in front matter: defines: [sequence-length]
+# Then every link to that term, in any post, opens that post.
+sequence-length:
+  term: Sequence length
+  short: The number of tokens in one input. Longer sequences cost more, because attention compares every token with every other one.
+bpe:
+  term: BPE (byte pair encoding)
+  short: Builds a vocabulary by starting from single bytes and repeatedly merging the most frequent adjacent pair into a new token. The merges, in order, become the merge rules.

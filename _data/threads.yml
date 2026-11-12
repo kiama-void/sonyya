@@ -1,0 +1,4 @@
+# Topics that notes can point to (data-thread="<key>").
+# A post covers a topic by listing its key in front matter: threads: [<key>]
+embedding-training:
+  title: How training shapes the embedding table

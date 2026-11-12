@@ -1,0 +1,124 @@
+<!-- Local preview only (jekyll serve): edit this page's Markdown in place. -->
+<style>
+  .le-btn {
+    position: fixed; right: 20px; bottom: 20px; z-index: 50;
+    font: 500 13px/1 var(--sans); color: var(--ink);
+    background: var(--surface); border: 1px solid var(--line); border-radius: 999px;
+    padding: 9px 14px; cursor: pointer;
+  }
+  .le-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .le-btn.le-primary { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .le-btn.le-primary:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .le-bar { position: fixed; right: 20px; bottom: 20px; z-index: 50; display: flex; gap: 8px; align-items: center; }
+  .le-bar .le-btn { position: static; }
+  .le-status { font: 400 12px/1 var(--sans); color: var(--muted); margin-right: 4px; }
+  .le-status.err { color: #b3261e; }
+  .le-text {
+    display: block; width: 100%; box-sizing: border-box; min-height: 70vh;
+    font: 400 15px/1.7 var(--mono); color: var(--body);
+    background: var(--bg); border: 1px solid var(--line); border-radius: 8px;
+    padding: 20px; resize: vertical; tab-size: 2; outline: none;
+  }
+  .le-text:focus { border-color: var(--accent-soft); }
+  .le-editing .post-toc, .le-editing .related, .le-editing .post-nav { display: none !important; }
+</style>
+<script>
+(function () {
+  var API = 'http://127.0.0.1:4001/file';
+  var PATH = {{ page.path | jsonify }};
+  var target = document.querySelector('#post-body, .thought-page-body, .page-body') || document.querySelector('main.content');
+  if (!target) return;
+
+  var editBtn = document.createElement('button');
+  editBtn.className = 'le-btn';
+  editBtn.textContent = 'Edit';
+  editBtn.title = 'Edit this page (E)';
+  document.body.appendChild(editBtn);
+
+  var original = null, area, bar, status, saved = '', saving = false;
+
+  function dirty() { return area && area.value !== saved; }
+  function setStatus(msg, err) { status.textContent = msg; status.className = 'le-status' + (err ? ' err' : ''); }
+  function grow() { area.style.height = 'auto'; area.style.height = Math.max(area.scrollHeight + 2, window.innerHeight * 0.7) + 'px'; }
+
+  function open() {
+    if (area) return;
+    editBtn.disabled = true;
+    fetch(API + '?path=' + encodeURIComponent(PATH))
+      .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error); return j; }); })
+      .then(function (j) {
+        original = Array.prototype.slice.call(target.childNodes);
+        saved = j.content;
+        area = document.createElement('textarea');
+        area.className = 'le-text';
+        area.spellcheck = true;
+        area.value = saved;
+        target.replaceChildren(area);
+        document.body.classList.add('le-editing');
+
+        bar = document.createElement('div');
+        bar.className = 'le-bar';
+        status = document.createElement('span');
+        status.className = 'le-status';
+        var cancel = document.createElement('button');
+        cancel.className = 'le-btn'; cancel.textContent = 'Cancel'; cancel.title = 'Esc';
+        var save = document.createElement('button');
+        save.className = 'le-btn le-primary'; save.textContent = 'Save'; save.title = '⌘S';
+        cancel.onclick = close;
+        save.onclick = saveFile;
+        bar.append(status, cancel, save);
+        editBtn.replaceWith(bar);
+
+        area.addEventListener('input', function () { grow(); setStatus(dirty() ? 'Unsaved' : ''); });
+        grow();
+        area.focus();
+        area.setSelectionRange(0, 0);
+      })
+      .catch(function (e) {
+        editBtn.disabled = false;
+        alert('Can\'t load ' + PATH + ' for editing. Is the site running via ./serve.sh?\n\n' + e.message);
+      });
+  }
+
+  function close() {
+    if (dirty() && !confirm('Discard unsaved changes?')) return;
+    target.replaceChildren.apply(target, original);
+    document.body.classList.remove('le-editing');
+    bar.replaceWith(editBtn);
+    editBtn.disabled = false;
+    area = null;
+  }
+
+  function saveFile() {
+    if (saving || !area) return;
+    saving = true;
+    setStatus('Saving…');
+    var content = area.value;
+    fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ path: PATH, content: content }) })
+      .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error); }); })
+      .then(function () {
+        saved = content;
+        setStatus('Saved. Rebuilding…');
+        // Live reload refreshes the page once Jekyll finishes the rebuild.
+      })
+      .catch(function (e) { setStatus('Save failed: ' + e.message, true); })
+      .then(function () { saving = false; });
+  }
+
+  editBtn.onclick = open;
+  document.addEventListener('keydown', function (e) {
+    if (area) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 's') { e.preventDefault(); saveFile(); }
+      else if (e.key === 'Escape') { e.preventDefault(); close(); }
+      else if (e.key === 'Tab' && e.target === area) {
+        e.preventDefault();
+        area.setRangeText('  ', area.selectionStart, area.selectionEnd, 'end');
+        area.dispatchEvent(new Event('input'));
+      }
+    } else if (e.key === 'e' && !e.metaKey && !e.ctrlKey && !e.altKey && !/INPUT|TEXTAREA|SELECT/.test(e.target.tagName) && !e.target.isContentEditable) {
+      open();
+    }
+  });
+  window.addEventListener('beforeunload', function (e) { if (dirty()) { e.preventDefault(); e.returnValue = ''; } });
+})();
+</script>

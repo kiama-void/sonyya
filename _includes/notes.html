@@ -1,0 +1,28 @@
+{%- comment -%}
+  For notes with data-thread, adds a line linking to the post that covers that topic.
+  Topics: _data/threads.yml. A post covers one via front matter: threads: [key]
+{%- endcomment -%}
+{%- assign covered = "" -%}
+{%- for p in site.posts -%}{%- for t in p.threads -%}{%- capture entry -%}"{{ t }}":{{ p.url | relative_url | jsonify }},{%- endcapture -%}{%- assign covered = covered | append: entry -%}{%- endfor -%}{%- endfor -%}
+<script>
+(function () {
+  var THREADS = {{ site.data.threads | jsonify }} || {};
+  var URLS = { {{ covered }} "": "" };
+  var SELF = {{ page.url | relative_url | jsonify }};
+  document.querySelectorAll('blockquote.note[data-thread]').forEach(function (note) {
+    var key = note.getAttribute('data-thread'), info = THREADS[key] || {}, url = URLS[key];
+    if (url === SELF) return;
+    var title = info.title || key.replace(/-/g, ' ');
+    var line = document.createElement('p');
+    line.className = 'note-thread';
+    line.append('More in ');
+    if (url) {
+      var a = document.createElement('a'); a.href = url; a.textContent = title; line.append(a);
+    } else {
+      var s = document.createElement('span'); s.textContent = title; line.append(s);
+      var soon = document.createElement('span'); soon.className = 'soon'; soon.textContent = ' (coming later)'; line.append(soon);
+    }
+    note.appendChild(line);
+  });
+})();
+</script>

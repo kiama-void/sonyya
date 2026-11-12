@@ -12,5 +12,8 @@
       {% include footer.html %}
     </div>
     {% include mentions.html %}
+    {% include notes.html %}
+    {% include glossary.html %}
+    {% if jekyll.environment == "development" and page.path %}{% assign ext = page.path | split: "." | last %}{% if ext == "md" or ext == "markdown" %}{% include local-editor.html %}{% endif %}{% endif %}
   </body>
 </html>

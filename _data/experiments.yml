@@ -1,0 +1,5 @@
+# Experiments tagged in posts: {% include experiment.html id="token-counts" %}
+# notebook: path in this repo (opens on GitHub once pushed)
+token-counts:
+  title: Same sentence, different token counts
+  notebook: _notebooks/tokenizer.ipynb

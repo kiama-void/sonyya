@@ -1,0 +1,63 @@
+{%- comment -%}
+  Term links: [text](#term:key). Definitions: _data/glossary.yml.
+  Lists used terms in the post sidebar. If a post has front matter defines: [key], the term links to it.
+{%- endcomment -%}
+{%- assign defined = "" -%}
+{%- for p in site.posts -%}{%- for t in p.defines -%}{%- capture entry -%}"{{ t }}":{{ p.url | relative_url | jsonify }},{%- endcapture -%}{%- assign defined = defined | append: entry -%}{%- endfor -%}{%- endfor -%}
+<script>
+(function () {
+  var TERMS = {{ site.data.glossary | jsonify }} || {};
+  var POSTS = { {{ defined }} "": "" };
+  var SELF = {{ page.url | relative_url | jsonify }};
+  var links = document.querySelectorAll('a[href^="#term:"]');
+  if (!links.length) return;
+
+  var box = document.getElementById('post-terms');
+  var list = box && box.querySelector('dl');
+  var entries = {};
+
+  links.forEach(function (a) {
+    var key = a.getAttribute('href').slice(6), info = TERMS[key];
+    if (!info) return;
+    var post = POSTS[key] && POSTS[key] !== SELF ? POSTS[key] : null;
+    a.classList.add('term');
+    a.title = info.short || '';
+    a.href = post || '#term-' + key;
+
+    if (list && !entries[key]) {
+      var dt = document.createElement('dt'), dd = document.createElement('dd');
+      dt.id = 'term-' + key;
+      dt.textContent = info.term || key;
+      dd.textContent = info.short || '';
+      if (post) {
+        var more = document.createElement('a');
+        more.href = post; more.textContent = 'Read more →';
+        dd.append(' ', more);
+      }
+      list.append(dt, dd);
+      entries[key] = dt;
+      box.hidden = false;
+    }
+    if (post) return;
+
+    a.addEventListener('click', function (e) {
+      e.preventDefault();
+      var dt = entries[key];
+      if (dt && dt.offsetParent) {
+        dt.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        [dt, dt.nextElementSibling].forEach(function (el) {
+          el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
+        });
+        return;
+      }
+      // Sidebar hidden (narrow screens): show the definition under the term.
+      var open = a.nextElementSibling;
+      if (open && open.classList.contains('term-pop')) { open.remove(); return; }
+      var pop = document.createElement('span');
+      pop.className = 'term-pop';
+      pop.textContent = info.short || '';
+      a.after(pop);
+    });
+  });
+})();
+</script>
