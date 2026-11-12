@@ -838,3 +838,92 @@ a.mention:hover { text-decoration: underline; text-decoration-color: var(--accen
   text-decoration: none;
 }
 .page-body .x-entity-link:hover { color: var(--accent); }
+
+/* ---------- Collapsible thoughts (title only; click to open) ---------- */
+
+details.thought-card { padding: 0; border-bottom: 1px solid var(--line); }
+details.thought-card > summary {
+  list-style: none;
+  cursor: pointer;
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) auto;
+  column-gap: 12px;
+  align-items: baseline;
+  padding: 16px 0;
+}
+details.thought-card > summary::-webkit-details-marker { display: none; }
+details.thought-card > summary::before {
+  content: "+";
+  font-family: var(--mono);
+  font-size: 15px;
+  color: var(--muted);
+  transition: transform 0.15s ease;
+}
+details.thought-card[open] > summary::before { content: "–"; color: var(--accent); }
+details.thought-card > summary:hover .thought-title { color: var(--accent); }
+details.thought-card > summary:focus-visible { outline: 2px solid var(--accent-soft); outline-offset: 4px; border-radius: 4px; }
+
+.thought-title {
+  font-family: var(--sans);
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color 0.15s ease;
+}
+details.thought-card[open] .thought-title { white-space: normal; font-weight: 600; }
+details.thought-card > summary time {
+  font-size: 14px;
+  color: var(--muted);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.thought-body { padding: 0 0 24px 28px; }
+.thought-body .thought-text { font-size: 18px; }
+.thought-body .thought-text p { margin: 0 0 0.8em; }
+.thought-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  margin-top: 14px;
+}
+.thought-foot .tag-list { margin: 0; }
+.thought-permalink {
+  margin-left: auto;
+  font-size: 13px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.thought-permalink:hover { color: var(--accent); }
+
+/* Thoughts page: same rows, slightly larger */
+.thought-month details.thought-card > summary { padding: 20px 0; }
+.thought-month .thought-title { font-size: 20px; }
+.thought-month .thought-body .thought-text { font-size: 20px; }
+
+@media (max-width: 680px) {
+  .thought-body { padding-left: 0; }
+  .thought-month .thought-title { font-size: 18px; }
+  .thought-month .thought-body .thought-text { font-size: 18px; }
+}
+details.thought-card > summary time,
+.thought-permalink,
+.thought-foot .tag { font-family: var(--sans); }
+.page-body .thought-permalink { color: var(--muted); text-decoration: none; }
+.page-body .thought-permalink:hover { color: var(--accent); }
+/* Titles wrap to two lines max instead of cutting off */
+.thought-title {
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+details.thought-card[open] .thought-title { display: block; }
+.page-body .thought-foot .tag { color: var(--muted); text-decoration: none; }
+.page-body .thought-foot .tag:hover { color: var(--accent); }

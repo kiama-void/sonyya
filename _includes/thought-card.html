@@ -1,8 +1,15 @@
-<article class="thought-card">
-  {% if include.thought.heading %}<h3 class="thought-heading"><a href="{{ include.thought.url | relative_url }}">{{ include.thought.heading }}</a></h3>{% endif %}
-  <div class="thought-text">{{ include.thought.content }}</div>
-  <a class="thought-meta" href="{{ include.thought.url | relative_url }}">
-    <time datetime="{{ include.thought.date | date_to_xmlschema }}">{{ include.thought.date | date: "%b %-d, %Y" }}</time>
-  </a>
-  {% include tag-list.html tags=include.thought.tags %}
-</article>
+{%- assign t = include.thought -%}
+{%- capture label -%}{% if t.heading %}{{ t.heading }}{% else %}{{ t.content | strip_html | normalize_whitespace | truncate: 90 }}{% endif %}{%- endcapture -%}
+<details class="thought-card">
+  <summary>
+    <span class="thought-title">{{ label }}</span>
+    <time datetime="{{ t.date | date_to_xmlschema }}">{{ t.date | date: "%b %-d" }}</time>
+  </summary>
+  <div class="thought-body">
+    <div class="thought-text">{{ t.content }}</div>
+    <div class="thought-foot">
+      {% include tag-list.html tags=t.tags %}
+      <a class="thought-permalink" href="{{ t.url | relative_url }}">Open ↗</a>
+    </div>
+  </div>
+</details>
